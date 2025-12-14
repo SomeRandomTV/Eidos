@@ -220,3 +220,43 @@ The following states are accepting and emit tokens:
 - `S_DONE` → delimiter tokens
 
 Keyword resolution is performed **after** reaching `S_ID` by matching the lexeme against the keyword table.
+
+
+### Visual
+
+```mermaid
+stateDiagram-v2
+    [*] --> S0
+
+    S0 --> S_ID : LETTER
+    S0 --> S_INT : DIGIT
+    S0 --> S_EQ : "="
+    S0 --> S_LT : "<"
+    S0 --> S_GT : ">"
+    S0 --> S_BANG : "!"
+    S0 --> S_OP : + - * /
+    S0 --> S_DONE : DELIM
+    S0 --> S0 : WS
+    S0 --> S_ERR : OTHER
+
+    S_ID --> S_ID : LETTER / DIGIT
+    S_ID --> S_DONE : other
+
+    S_INT --> S_INT : DIGIT
+    S_INT --> S_INT : "_"
+    S_INT --> S_DONE : other
+
+    S_EQ --> S_DONE : "="
+    S_EQ --> S_DONE : other
+
+    S_LT --> S_DONE : "="
+    S_LT --> S_DONE : other
+
+    S_GT --> S_DONE : "="
+    S_GT --> S_DONE : other
+
+    S_BANG --> S_DONE : "="
+    S_BANG --> S_ERR : other
+
+    S_OP --> S_DONE
+```
