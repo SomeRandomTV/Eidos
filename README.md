@@ -17,7 +17,7 @@ NOTE: Only integer data types are used for now, later implementations will add m
 - `print`
 - `read`
 
-NOTE: print() will only print variables or integer constants in the earliest versions.
+NOTE: print() will only print variables or integer constants in the earliest versions. \
 NOTE: read() will just accept the integer typed in and save it to a file, kind of works like this:
 
 ```bash
