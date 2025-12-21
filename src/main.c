@@ -39,8 +39,13 @@ int main(int argc, char *argv[]) {
     init_lexer(&lexer, source);
 
     Token tok;
+    printf("Lexeme Token\n");
     do {
         tok = next_token(&lexer);
+
+        if (tok.lexeme) {
+            free((void *)tok.lexeme);
+        }
     } while (tok.tokenType != EOF_TOK);
 
     free(source);

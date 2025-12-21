@@ -72,16 +72,6 @@ args:
     *l (Lexer) -> Lexer instance
     start (size_t) -> Starting position of lexeme
 */
-/*
-Build lexeme string from start to current position
-
-args:
-    *l (Lexer) -> Lexer instance
-    start (size_t) -> Starting position of lexeme
-
-returns:
-    (char*) -> Allocated lexeme string
-*/
 static char *build_lexeme(Lexer *l, size_t start) {
     size_t len = l->pos - start;
     char *lexeme = malloc(len + 1);
@@ -106,6 +96,8 @@ static void print_token_info(const char *lexeme, TokenType type) {
         case KEYWORD_FOR: token_name = "KEYWORD_FOR"; break;
         case KEYWORD_LET: token_name = "KEYWORD_LET"; break;
         case KEYWORD_WHILE: token_name = "KEYWORD_WHILE"; break;
+        case KEYWORD_IF: token_name = "KEYWORD_IF"; break;
+        case KEYWORD_ELSE: token_name = "KEYWORD_ELSE"; break;
         case IDENTIFIER: token_name = "IDENTIFIER"; break;
         case INT_LIT: token_name = "INT_LIT"; break;
         case PLUS_OP: token_name = "PLUS_OP"; break;
@@ -126,11 +118,12 @@ static void print_token_info(const char *lexeme, TokenType type) {
         case RIGHT_PAREN: token_name = "RIGHT_PAREN"; break;
         case LEFT_CURL: token_name = "LEFT_CURL"; break;
         case RIGHT_CURL: token_name = "RIGHT_CURL"; break;
+        case SEMICOLON: token_name = "SEMICOLON"; break;
         case EOF_TOK: token_name = "EOF_TOK"; break;
         default: token_name = "UNKNOWN"; break;
     }
     
-    printf("Lexeme: '%s' \t Token: %s\n", lexeme, token_name);
+    printf("%s %s\n", lexeme, token_name);
 }
 
 /*
@@ -149,6 +142,8 @@ static TokenType classify_token(const char *lexeme) {
     if (strcmp(lexeme, "for") == 0) return KEYWORD_FOR;
     if (strcmp(lexeme, "let") == 0) return KEYWORD_LET;
     if (strcmp(lexeme, "while") == 0) return KEYWORD_WHILE;
+    if (strcmp(lexeme, "if") == 0) return KEYWORD_IF;
+    if (strcmp(lexeme, "else") == 0) return KEYWORD_ELSE;
     
     // Operators
     if (strcmp(lexeme, "+") == 0) return PLUS_OP;
@@ -171,13 +166,8 @@ static TokenType classify_token(const char *lexeme) {
     if (strcmp(lexeme, ")") == 0) return RIGHT_PAREN;
     if (strcmp(lexeme, "{") == 0) return LEFT_CURL;
     if (strcmp(lexeme, "}") == 0) return RIGHT_CURL;
+    if (strcmp(lexeme, ";") == 0) return SEMICOLON;
 
-
-    if (strcmp(lexeme, "for") == 0) return KEYWORD_FOR;
-    if (strcmp(lexeme, "print") == 0) return KEYWORD_PRINT;
-    if (strcmp(lexeme, "read") == 0) return KEYWORD_READ;
-    if (strcmp(lexeme, "let") == 0) return KEYWORD_LET;
-    if (strcmp(lexeme, "while") == 0) return KEYWORD_WHILE;
     
     // Check if it's a number
     if (isdigit(lexeme[0])) {
@@ -223,7 +213,7 @@ returns:
     token (Token) -> Processed token 
 */
 Token next_token(Lexer *l) {
-    // Skip whitespace
+    // skip whitespace
     while (isspace(peek(l))) {
         advance(l);
     }
@@ -231,13 +221,13 @@ Token next_token(Lexer *l) {
     char curr_c = peek(l);
     size_t start = l->pos;
     
-    // Check for end of input
+    // check for end of input
     if (curr_c == '\0') {
         char *lexeme = build_lexeme(l, start);
         return make_token(l, EOF_TOK, lexeme);
     }
 
-    // Numbers
+    // numbers
     if (isdigit(curr_c)) {
         while (isdigit(peek(l))) {
             advance(l);
@@ -246,11 +236,10 @@ Token next_token(Lexer *l) {
         TokenType type = classify_token(lexeme);
         print_token_info(lexeme, type);
         Token t = make_token(l, type, lexeme);
-        free(lexeme);
         return t;
     }
 
-    // Identifiers and Keywords
+    // identifiers and Keywords
     if (isalpha(curr_c) || curr_c == '_') {
         while (isalnum(peek(l)) || peek(l) == '_') {
             advance(l);
@@ -259,14 +248,13 @@ Token next_token(Lexer *l) {
         TokenType type = classify_token(lexeme);
         print_token_info(lexeme, type);
         Token t = make_token(l, type, lexeme);
-        free(lexeme);
         return t;
     }
 
-    // Operators and delimiters
+    // operators and delimiters
     advance(l);
     
-    // Check for two-character operators
+    // check for two-character operators
     char next_c = peek(l);
     if ((curr_c == '+' && next_c == '+') ||
         (curr_c == '-' && next_c == '-') ||
@@ -281,7 +269,6 @@ Token next_token(Lexer *l) {
     TokenType type = classify_token(lexeme);
     print_token_info(lexeme, type);
     Token t = make_token(l, type, lexeme);
-    free(lexeme);
     return t;
 }
 

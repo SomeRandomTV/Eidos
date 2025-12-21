@@ -14,6 +14,8 @@ typedef enum TokenType {
     KEYWORD_FOR,        // for
     KEYWORD_LET,        // let
     KEYWORD_WHILE,      // while
+    KEYWORD_IF,         // if 
+    KEYWORD_ELSE,       // else
     IDENTIFIER,         // a, d, counter, x, y, z
     INT_LIT,            // 1,2,3,234,5432345
     PLUS_OP,            // +
@@ -34,6 +36,7 @@ typedef enum TokenType {
     RIGHT_PAREN,        // )
     LEFT_CURL,          // {
     RIGHT_CURL,         // }
+    SEMICOLON,          // ;
     EOF_TOK,            // End-of-File
     UNKNOWN,            // Unknown token
 } TokenType;

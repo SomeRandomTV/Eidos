@@ -1,16 +1,71 @@
 # Eidos
 
-Eidos is a simple language and compiler aimed at deepening my knowledge in C++ and data structures & algorithms. Eidos is Greek for "Form" or "Essence." With this compiler, I aim to learn the essence and form of how we type code into an editor and run it through a compiler, which then transforms it into something the computer can execute.
+Eidos is a simple language and compiler aimed at deepening my knowledge in C and compiler design. Eidos is Greek for "Form" or "Essence." With this compiler, I aim to learn the essence and form of how we type code into an editor and run it through a compiler, which then transforms it into something the computer can execute.
 
 ## 1.1 Scope
 
 As mentioned earlier, the scope of this project is to learn, not to create the next Rust or some fancy language. With that in mind, the language will start simple and grow over time, but nothing overly complex.
 
+## Supported Features (For Now)
+
+### Data Types
+- `int`
+
+NOTE: Only integer data types are used for now, later implementations will add more primitive ones such as char, bool, float, etc. String will probably happen much later.
+
+### I/O Operations
+- `print`
+- `read`
+
+NOTE: print() will only print variables or integer constants in the earliest versions.
+NOTE: read() will just accept the integer typed in and save it to a file, kind of works like this:
+
+```bash
+let x = read();
+```
+
+`read()` will take in an `integer` from `user` and save it to variable `x`
+
+### Arithmetic Operators
+`+` `-` `/` `*` `++` `--`
+
+Simple computer arithmetic stuff, (Modulo %, later)
+
+### Logical Comparisons
+`<` `>` `<=` `>=` `==` `!=`
+
+For your logical statements as needed
+
+### Control Flow
+- `if-else` statements
+- `for` loops
+- `while` loops
+
+Basic ass control flow, standard stuff
+
 ## 1.2 Type
 
 - Single Pass Compiler
 - Core Compiler (not a full language implementation)
-- Type checking enforced (only INT variables for now)
+- Type checking soon enforced
+
+## 1.3 Current Status
+
+**Completed:**
+- Lexer implementation with token classification
+- Support for keywords: `print`, `read`, `for`, `let`, `while`
+- Support for operators: `+`, `-`, `*`, `/`, `!`, `++`, `--`, `>`, `<`, `>=`, `<=`, `!=`, `=`, `==`
+- Support for delimiters: `(`, `)`, `{`, `}`
+- Integer literals and identifiers
+- Lexeme building and token classification system
+
+**In Progress:**
+- 🔨 Parser development
+- 🔨 AST construction
+
+**Planned:**
+- Semantic analysis
+- Code generation
 
 ## 2.1 Core Architecture
 
@@ -25,16 +80,58 @@ graph LR
 
 ## 3.1 Lexer
 
-The lexer has a simple job: convert source code into lexemes and tokens.
+The lexer converts source code into tokens by scanning characters and building lexemes. The implementation follows a **scan → build → classify** pattern:
+
+1. **Scan**: Read characters and determine lexeme boundaries
+2. **Build**: Extract the lexeme string from source
+3. **Classify**: Determine the appropriate token type
+
+### Implementation Details
+
+The lexer uses several helper functions:
+- `peek()`: Look at the current character without consuming it
+- `advance()`: Consume the current character and move to the next
+- `build_lexeme()`: Extract lexeme string from start position to current position(Mostly for printing/logging)
+- `classify_token()`: Map lexeme string to appropriate token type
+- `make_token()`: Create token structure with lexeme, type, line, and column info
+
+### Testing Lexer
+
+Included in the repo are 
+- `test_lexer.sh` &rarr; Shell script(written on macOS) for testing Lexer
+- `test_codes` &rarr; Test Directory containing test dummy code
+  - Nameing Convention: `test[0-9]_exit_code_0.e`
+- `test_codes_lexemes` &rarr; Test Directory containing the expected output after running lexer
+  - Nameing Convention: `test[0-9]_exit_code_0_output.e`
+
+Testing the lexer will run 
+1) Make
+2) Run Lexer with src code file
+3) Compare the output of lexer to the test outputs 
+4) Save output to `/logs`
+
+Testing directories right now only have passing tests, more to be added soon \
+- Different Exit Codes
+- Long Lexemes 
+- Invalid IDENTIFERES + INT_LIT 
 
 ### Example:
 
 ```
-let x: int = 10;
-let y: int = x * 3;
-if (y > 15) {
-    print(y)
-}
+let x = 10;
+x++;
+```
+
+**Output:**
+```
+Lexeme: 'let', Token: KEYWORD_LET
+Lexeme: 'x', Token: IDENTIFIER
+Lexeme: '=', Token: ASSIGN_OP
+Lexeme: '10', Token: INT_LIT
+Lexeme: ';', Token: SEMICOLON
+Lexeme: 'x', Token: IDENTIFIER
+Lexeme: '++', Token: INC_OP
+Lexeme: ';', Token: SEMICOLON
 ```
 
 ### 3.1.2 Keywords, Symbols, and Tokens
@@ -45,25 +142,26 @@ Below are the keywords, symbols, and their corresponding tokens:
 ```
 print               KEYWORD_PRINT
 read                KEYWORD_READ
-if                  KEYWORD_IF
-while               KEYWORD_WHILE
 for                 KEYWORD_FOR
-int                 KEYWORD_INT
+while               KEYWORD_WHILE
 let                 KEYWORD_LET
 ```
 
 **Variables:**
 ```
 x, abx, asd, counter    IDENTIFIER
-1, 2, 23_324            INT_LIT
+1, 2, 23, 324           INT_LIT
 ```
 
 **Operators:**
 ```
 +                   PLUS_OP
--                   MINUS_OP
+-                   SUB_OP
 /                   DIV_OP
 *                   MULT_OP
+!                   NOT_OP
+++                  INC_OP
+--                  DEC_OP
 >                   GREATER_OP
 <                   LESSER_OP
 =                   ASSIGN_OP
@@ -75,188 +173,51 @@ x, abx, asd, counter    IDENTIFIER
 
 **Delimiters:**
 ```
-(                   LPAREN
-)                   RPAREN
-{                   LBRACE
-}                   RBRACE
-:                   COLON
+(                   LEFT_PAREN
+)                   RIGHT_PAREN
+{                   LEFT_CURL
+}                   RIGHT_CURL
 ;                   SEMICOLON
 ```
 
-## 3.1.3 Deterministic Finite State Automaton (DFA)
+## 3.1.3 Lexer Architecture
 
-The Eidos lexer is implemented as a **Deterministic Finite State Automaton (DFA)**.  
-The DFA processes the source code character-by-character and emits tokens when an accepting state is reached.
+The Eidos lexer processes source code character-by-character and emits tokens. The lexer uses a **classification-based approach** where lexemes are first built, then classified into appropriate token types.
 
-Formally, the lexer DFA is defined as:
+### Key Components:
 
-**DFA = (Q, Σ, δ, q0, F)**
+1. **Lexer State**
+   - Current position in source
+   - Current line number
+   - Current column number
+   - Source code string
 
-Where:
-- **Q** is the finite set of states
-- **Σ** is the input alphabet
-- **δ** is the transition function
-- **q0** is the start state
-- **F** is the set of accepting states
+2. **Token Structure**
+   - Token type (enum)
+   - Lexeme string (dynamically allocated)
+   - Line number
+   - Column number
 
----
+3. **Classification System**
+   - Keywords are identified by string matching
+   - Operators are recognized by character patterns
+   - Identifiers start with letter or underscore
+   - Integer literals are sequences of digits
 
-### DFA States (Q)
+### Processing Flow:
 
 ```
-S0          Start state
-S_ID        Identifier or keyword
-S_INT       Integer literal
-S_OP        Single-character operator
-S_EQ        '=' seen (assignment or equality)
-S_LT        '<' seen (less-than or less-equal)
-S_GT        '>' seen (greater-than or greater-equal)
-S_BANG      '!' seen (not-equal)
-S_DONE      Accepting state
-S_ERR       Error state
-```
-
----
-
-### Input Alphabet (Σ)
-
-Characters are grouped into the following classes:
-
-| Class   | Characters |
-|---------|------------|
-| LETTER  | a–z, A–Z, _ |
-| DIGIT   | 0–9 |
-| WS      | space, tab, newline |
-| OP      | + - * / = < > ! |
-| DELIM   | ( ) { } : ; |
-| OTHER   | any invalid character |
-
----
-
-### Transition Function (δ)
-
-#### Start State (`S0`)
-
-| Input       | Next State |
-|-------------|------------|
-| LETTER      | S_ID |
-| DIGIT       | S_INT |
-| '='         | S_EQ |
-| '<'         | S_LT |
-| '>'         | S_GT |
-| '!'         | S_BANG |
-| + - * /     | S_OP |
-| DELIM       | S_DONE |
-| WS          | S0 (skip) |
-| OTHER       | S_ERR |
-
----
-
-#### Identifier / Keyword State (`S_ID`)
-
-| Input            | Next State |
-|------------------|------------|
-| LETTER or DIGIT  | S_ID |
-| otherwise        | S_DONE (retract one character) |
-
----
-
-#### Integer Literal State (`S_INT`)
-
-| Input          | Next State |
-|----------------|------------|
-| DIGIT          | S_INT |
-| '_' (optional) | S_INT |
-| otherwise      | S_DONE (retract one character) |
-
----
-
-#### Operator States
-
-##### Assignment / Equality (`S_EQ`)
-
-| Input     | Result |
-|-----------|--------|
-| '='       | Emit `EQUAL_OP` |
-| otherwise | Emit `ASSIGN_OP` (retract) |
-
----
-
-##### Less-than (`S_LT`)
-
-| Input     | Result |
-|-----------|--------|
-| '='       | Emit `LEQUAL_OP` |
-| otherwise | Emit `LESSER_OP` (retract) |
-
----
-
-##### Greater-than (`S_GT`)
-
-| Input     | Result |
-|-----------|--------|
-| '='       | Emit `GEQUAL_OP` |
-| otherwise | Emit `GREATER_OP` (retract) |
-
----
-
-##### Not-equal (`S_BANG`)
-
-| Input     | Result |
-|-----------|--------|
-| '='       | Emit `NEQUAL_OP` |
-| otherwise | Lexer error (`'!'` is invalid alone) |
-
----
-
-### Accepting States (F)
-
-The following states are accepting and emit tokens:
-
-- `S_ID` → `IDENTIFIER` or `KEYWORD_*` (via keyword lookup)
-- `S_INT` → `INT_LIT`
-- `S_OP` → arithmetic operator tokens
-- `S_EQ`, `S_LT`, `S_GT`, `S_BANG` → relational operator tokens
-- `S_DONE` → delimiter tokens
-
-Keyword resolution is performed **after** reaching `S_ID` by matching the lexeme against the keyword table.
-
-
-### Visual
-
-```mermaid
-stateDiagram-v2
-    [*] --> S0
-
-    S0 --> S_ID : LETTER
-    S0 --> S_INT : DIGIT
-    S0 --> S_EQ : "="
-    S0 --> S_LT : "<"
-    S0 --> S_GT : ">"
-    S0 --> S_BANG : "!"
-    S0 --> S_OP : + - * /
-    S0 --> S_DONE : DELIM
-    S0 --> S0 : WS
-    S0 --> S_ERR : OTHER
-
-    S_ID --> S_ID : LETTER / DIGIT
-    S_ID --> S_DONE : other
-
-    S_INT --> S_INT : DIGIT
-    S_INT --> S_INT : "_"
-    S_INT --> S_DONE : other
-
-    S_EQ --> S_DONE : "="
-    S_EQ --> S_DONE : other
-
-    S_LT --> S_DONE : "="
-    S_LT --> S_DONE : other
-
-    S_GT --> S_DONE : "="
-    S_GT --> S_DONE : other
-
-    S_BANG --> S_DONE : "="
-    S_BANG --> S_ERR : other
-
-    S_OP --> S_DONE
+Source Code
+    ↓
+Skip Whitespace
+    ↓
+Identify Character Type
+    ↓
+Build Lexeme (scan until boundary)
+    ↓
+Classify Token Type
+    ↓
+Create Token Structure
+    ↓
+Return Token
 ```
