@@ -40,7 +40,20 @@ typedef struct ASTNode {
             struct ASTNode* value;
         } var_decl;
 
-        // BINARY_
+        // AST_BINARY_EXPR 
+        struct {
+            struct ASTNode *left;
+            char *operator;
+            struct ASTNode *right;
+        } binary_expr;
+
+        // AST_IF_STMT_NODE 
+        struct {
+            struct ASTNode *left;
+            char *comparison_op;
+            struct ASTNode *right;
+            struct ASTNode *else_block;
+        } if_stmt;
 
     } data;
 } ASTNode;
