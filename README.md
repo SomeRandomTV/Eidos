@@ -267,15 +267,29 @@ print(x);
 ```
 
 The AST structure would be:
-```
-AST_PROGRAM_NODE
-  └─ AST_STMTS_NODE
-       ├─ AST_VAR_DECL_NODE (identifier: "x", value: AST_INT_LIT(5))
-       │    └─ next
-       ├─ AST_UNARY_EXPR (op: "++", operand: AST_IDENTIFIER("x"), is_prefix: 0)
-       │    └─ next
-       └─ AST_PRINT_NODE (expression: AST_IDENTIFIER("x"))
-            └─ next (NULL)
+
+```mermaid
+graph TD
+    A[AST_PROGRAM_NODE] --> B[AST_STMTS_NODE]
+    B --> C[AST_VAR_DECL_NODE<br/>identifier: 'x']
+    C --> D[AST_INT_LIT<br/>value: 5]
+    B --> E[AST_UNARY_EXPR<br/>op: '++'<br/>is_prefix: 0]
+    E --> F[AST_IDENTIFIER<br/>name: 'x']
+    B --> G[AST_PRINT_NODE]
+    G --> H[AST_IDENTIFIER<br/>name: 'x']
+    
+    C -.next.-> E
+    E -.next.-> G
+    G -.next.-> I[NULL]
+    
+    style A fill:#e1f5ff
+    style B fill:#fff4e1
+    style C fill:#ffe1e1
+    style E fill:#ffe1e1
+    style G fill:#ffe1e1
+    style D fill:#e1ffe1
+    style F fill:#e1ffe1
+    style H fill:#e1ffe1
 ```
 
 ### Unary Expression Handling
