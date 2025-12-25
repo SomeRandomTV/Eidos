@@ -221,3 +221,74 @@ Create Token Structure
     ↓
 Return Token
 ```
+
+## 4.1 Abstract Syntax Tree (AST)
+
+The AST is a tree representation of the syntactic structure of source code. Each node in the tree represents a construct in the language. The parser builds the AST from tokens provided by the lexer.
+
+### AST Node Types
+
+The AST uses a **tagged union** design where each node has a type and type-specific data:
+
+#### Program Structure
+- `AST_PROGRAM_NODE` - Root node containing all statements
+- `AST_STMTS_NODE` - Linked list of statement nodes
+
+#### Statement Nodes
+- `AST_VAR_DECL_NODE` - Variable declarations: `let x = 5;`
+- `AST_ASSIGN_NODE` - Assignments: `x = 10;`
+- `AST_IF_STMT_NODE` - If-else conditionals with optional else block
+- `AST_FOR_LOOP_NODE` - For loops with initializer, condition, step, and body
+- `AST_WHILE_LOOP_NODE` - While loops with condition and body
+- `AST_PRINT_NODE` - Print statements
+- `AST_READ_NODE` - Read statements for user input
+
+#### Expression Nodes
+- `AST_BINARY_EXPR` - Binary operations: `a + b`, `x * y`
+- `AST_COMPARISON_NODE` - Comparisons: `x >= 3`, `a == b`
+- `AST_UNARY_EXPR` - Unary operations: `++x`, `--a`, `-x`, `!flag`
+- `AST_IDENTIFIER` - Variable references
+- `AST_INT_LIT` - Integer literals
+
+### AST Design Principles
+
+1. **Type Safety**: Each node type has specific fields relevant to that construct
+2. **Memory Efficiency**: Uses union to minimize memory footprint
+3. **Recursive Structure**: Nodes can contain pointers to other nodes
+4. **Linked Lists**: Statements are connected via `next` pointers
+
+### Example AST Structure
+
+For the code:
+```c
+let x = 5;
+x++;
+print(x);
+```
+
+The AST structure would be:
+```
+AST_PROGRAM_NODE
+  └─ AST_STMTS_NODE
+       ├─ AST_VAR_DECL_NODE (identifier: "x", value: AST_INT_LIT(5))
+       │    └─ next
+       ├─ AST_UNARY_EXPR (op: "++", operand: AST_IDENTIFIER("x"), is_prefix: 0)
+       │    └─ next
+       └─ AST_PRINT_NODE (expression: AST_IDENTIFIER("x"))
+            └─ next (NULL)
+```
+
+### Unary Expression Handling
+
+The `AST_UNARY_EXPR` node handles all unary operations with an `is_prefix` flag:
+- **Prefix**: `++x`, `--x`, `-x`, `!flag` (is_prefix = 1)
+- **Postfix**: `x++`, `x--` (is_prefix = 0)
+
+This distinction is important for semantic analysis and code generation, as prefix and postfix increment/decrement have different evaluation semantics.
+
+### Memory Management
+
+- Parser owns token lexemes during parsing
+- AST nodes are dynamically allocated
+- Linked list structure allows efficient sequential processing
+- All memory freed via recursive AST traversal after compilation
