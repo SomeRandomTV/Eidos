@@ -203,6 +203,10 @@ void init_lexer(Lexer *l, const char *src) {
     l->col = 1;
 }
 
+
+
+/* ========== PUBLIC API ========== */
+
 /*
 Processes lexeme and returns token
 

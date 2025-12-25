@@ -32,7 +32,6 @@ typedef enum {
     AST_WHILE_LOOP_NODE,
     AST_PRINT_NODE,
     AST_READ_NODE,
-    AST_INC_DEC_NODE,
 
     // Expression Nodes
     AST_BINARY_EXPR,
@@ -107,11 +106,20 @@ typedef struct ASTNode {
             char *identifier;         // points to an identifier to store value
         } read_node;
 
-        // AST_INC_DEC_NODE: x++, --a
+        // AST_UNARY_EXPR: x++, --a, -x, !flag
         struct {
-            char *identifier;       // a
-            char *op;               // ++
-        } inc_dec_node;
+            char *op;                    // ++, --, -, !
+            struct ASTNode *operand;     // the expression being operated on
+            int is_prefix;               // 1 for ++x/--x, 0 for x++/x-- (matters for inc/dec)
+        } unary_expr;
+
+        // AST_COMPARISON_NODE: x >= 3
+        struct {
+            char *left_expression;
+            char *comparison_op;
+            char *right_expression;
+
+        } comparison;
 
         // AST_BINARY_EXPR let x = a * t;
         struct {
