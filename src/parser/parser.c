@@ -72,21 +72,22 @@ static void advance(Parser* parser) {
 
 
 static bool match(Parser* parser, TokenType expectedType) {
-    
     if (parser->current_token.tokenType != expectedType) {
-        parser_error(parser);
+        parser_error(parser, expectedType);
         return false;
-
-    } else {
-        return true;
     }
-
+    return true;
 }
 
-static void parser_error(Parser* parser) {
-
-    if 
-
+static void parser_error(Parser* parser, TokenType expectedType) {
+    fprintf(stderr, "Parse Error at line %zu, column %zu:\n", 
+            parser->current_token.line, 
+            parser->current_token.col);
+    fprintf(stderr, "  Unexpected token: %d (lexeme: '%s')\n", 
+            parser->current_token.tokenType,
+            parser->current_token.lexeme ? parser->current_token.lexeme : "NULL");
+    fprintf(stderr, "  Expected token: %d\n", expectedType);
+    exit(1);
 }
 
 
@@ -121,20 +122,34 @@ void parser_free(Parser* parser) {
         return;
     } 
 
-    if (parser->current_token.tokenType) {
-        free(parser->current_token.tokenType);
-    } 
-
+    // Free lexeme strings (don't free tokenType - it's an enum, not allocated memory)
     if (parser->current_token.lexeme) {
-        free(parser->current_token.lexeme);
+        free((void*)parser->current_token.lexeme);
     }
 
-    if (parser->peek_token.tokenType) {
-        free(parser->peek_token.lexeme);
-    } 
     if (parser->peek_token.lexeme) {
-        free(parser->peek_token.lexeme);
+        free((void*)parser->peek_token.lexeme);
     }
 
+    // Free parser struct itself
+    free(parser);
 }
-ASTNode* parse_program(Parser* parser);  // Main entry point
+
+ASTNode* parse_program(Parser* parser) {
+    // Create the program root node
+    ASTNode *program = (ASTNode*)malloc(sizeof(ASTNode));
+    if (!program) {
+        fprintf(stderr, "Error: Failed to allocate AST program node\n");
+        exit(1);
+    }
+    
+    program->type = AST_PROGRAM_NODE;
+    program->data.program.statements = parse_stmts(parser);
+    
+    // Expect EOF at the end of the program
+    if (parser->current_token.tokenType != EOF_TOK) {
+        parser_error(parser, EOF_TOK);
+    }
+    
+    return program;
+}
