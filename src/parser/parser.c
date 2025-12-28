@@ -2,14 +2,128 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/* ========== PRIVTATE functions ========== */
+
+
+/* ========== PUBLIC API ========== */
+Parser* parser_init(Lexer *l) {
+    /*
+    Initializes the parser structer with the current token and following token
+
+    args:
+        *l (Lexer) -> Lexer instance 
+
+    returns:
+        parser (Parser) -> Syntax Parser instance 
+    */
+    Parser *parser = (Parser*)malloc(sizeof(Parser));
+
+    parser->lexer = l;                      // save lexer to parser
+    parser->current_token = next_token(l);  // get the current toke
+    parser->peek_token = next_token(l);     // automatically advance and get the next token for lookahead
+
+    return parser;
+    
+}
+
+
+void parser_free(Parser* parser) {
+    /*
+    Free up tokens and lexemes(The parser now owns the lexemes) of current and peek tokens 
+    */
+
+    if (!parser) {
+        return;
+    } 
+
+    // Free lexeme strings (don't free tokenType - it's an enum, not allocated memory)
+    if (parser->current_token.lexeme) {
+        free((void*)parser->current_token.lexeme);
+    }
+
+    if (parser->peek_token.lexeme) {
+        free((void*)parser->peek_token.lexeme);
+    }
+
+    // Free parser struct itself
+    free(parser);
+}
+
+ASTNode* parse_program(Parser* parser) {
+    // Create the program root node
+    ASTNode *program = (ASTNode*)malloc(sizeof(ASTNode));
+    if (!program) {
+        fprintf(stderr, "Error: Failed to allocate AST program node\n");
+        exit(1);
+    }
+    
+    program->type = AST_PROGRAM_NODE;
+    program->data.program.statements = parse_stmts(parser);
+    
+    // Expect EOF at the end of the program
+    if (parser->current_token.tokenType != EOF_TOK) {
+        parser_error(parser, EOF_TOK);
+    }
+    
+    return program;
+}
+
+
+/* ========== PRIVTATE helper functions ========== */
 
 static ASTNode* parse_stmts(Parser* parser) {
+    /*
+    Parses STMTS nodes reccursively 
+
+    args:
+        parser (Parser) -> pointer to Parser Instance
+
+    returns:
+        stmts (ASTNode) -> Linked List of Stmt Nodes 
+    */
+
+    if (parser->current_token.tokenType == EOF_TOK || parser->current_token.tokenType == RIGHT_CURL) {
+        return NULL;
+    }
+
+    // Create a statement list node
+    ASTNode *stmts = (ASTNode*)malloc(sizeof(ASTNode));
+    if (!stmts) {
+        fprintf(stderr, "Error: Failed to allocate statement list node\n");
+        exit(1);
+    }
+
+    stmts->type = AST_STMTS_NODE;
+    stmts->data.stmts.stmt = parse_stmt(parser);
+    stmts->data.stmts.next = parse_stmts(parser);
+
+    return stmts;
 
 
 }
 
 static ASTNode* parse_stmt(Parser* parser) {
+
+    if (parser->current_token.tokenType == SEMICOLON) {
+        return NULL;       
+    } 
+
+    ASTNode *stmt = (ASTNode*)malloc(sizeof(ASTNode));
+    if (!stmt) {
+        fprintf(stderr, "Error: Failed to allocate statement node\n");
+    }
+
+    switch (parser->current_token.tokenType) {
+
+    case KEYWORD_LET:   // var declaration 
+        
+        stmt->type = AST_ASSIGN_NODE;
+        stmt->data.assign.identifier = NULL; // PARSE IDENTIFIER 
+        stmt->data.assign.value = NULL;      // Parse Expression
+        break;
+    
+    default:
+        break;
+    }
 
 }
 
@@ -91,65 +205,3 @@ static void parser_error(Parser* parser, TokenType expectedType) {
 }
 
 
-/* ========== PUBLIC API ========== */
-Parser* parser_init(Lexer *l) {
-    /*
-    Initializes the parser structer with the current token and following token
-
-    args:
-        *l (Lexer) -> Lexer instance 
-
-    returns:
-        parser (Parser) -> Syntax Parser instance 
-    */
-    Parser *parser = (Parser*)malloc(sizeof(Parser));
-
-    parser->lexer = l;                      // save lexer to parser
-    parser->current_token = next_token(l);  // get the current toke
-    parser->peek_token = next_token(l);     // automatically advance and get the next token for lookahead
-
-    return parser;
-    
-}
-
-
-void parser_free(Parser* parser) {
-    /*
-    Free up tokens and lexemes(The parser now owns the lexemes) of current and peek tokens 
-    */
-
-    if (!parser) {
-        return;
-    } 
-
-    // Free lexeme strings (don't free tokenType - it's an enum, not allocated memory)
-    if (parser->current_token.lexeme) {
-        free((void*)parser->current_token.lexeme);
-    }
-
-    if (parser->peek_token.lexeme) {
-        free((void*)parser->peek_token.lexeme);
-    }
-
-    // Free parser struct itself
-    free(parser);
-}
-
-ASTNode* parse_program(Parser* parser) {
-    // Create the program root node
-    ASTNode *program = (ASTNode*)malloc(sizeof(ASTNode));
-    if (!program) {
-        fprintf(stderr, "Error: Failed to allocate AST program node\n");
-        exit(1);
-    }
-    
-    program->type = AST_PROGRAM_NODE;
-    program->data.program.statements = parse_stmts(parser);
-    
-    // Expect EOF at the end of the program
-    if (parser->current_token.tokenType != EOF_TOK) {
-        parser_error(parser, EOF_TOK);
-    }
-    
-    return program;
-}
