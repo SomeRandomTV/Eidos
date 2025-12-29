@@ -35,7 +35,7 @@ typedef enum {
 
     // Expression Nodes
     AST_BINARY_EXPR,
-    AST_COMPARISON_NODE,
+    AST_CONDITIONAL_NODE,
     AST_IDENTIFIER,
     AST_INT_LIT,
     AST_UNARY_EXPR, 
@@ -69,12 +69,12 @@ typedef struct ASTNode {
         struct {
             char *identifier;            // x
             struct ASTNode *value;       // 5
-        } assign;
+        } assignment;
 
 
         // AST_IF_STMT_NODE: if (x == 5) { then_block } else { else_block }
         struct {
-            struct ASTNode *comparison;     // any <expr> that evaluates to True
+            struct ASTNode *condition;    // 2 expressions being compared that evaluates to True
             struct ASTNode *then_block;     // block of code to execute after comparison
             struct ASTNode *else_block;     // Else block, NULL if not provided
         } if_stmt;
@@ -82,8 +82,8 @@ typedef struct ASTNode {
 
         // AST_FOR_LOOP_NODE: for (let x = 0; x < 10; x++) { for_block }
         struct {
-            struct ASTNode *initializer;    // let x = 0;
-            struct ASTNode *comparision;    // x < 10;
+            struct ASTNode *initializer;    // x = 0;
+            struct ASTNode *condition;      // x < 10;
             struct ASTNode *step;           // x++
             struct ASTNode *for_block;
 
@@ -91,20 +91,27 @@ typedef struct ASTNode {
 
         // AST_WHILE_LOOP_NODE: while (x < 10) { while_block }
         struct {
-            struct ASTNode *conditional;    // x < 10
-            struct ASTNode *while_block;    
+            struct ASTNode *condition;      // x < 10
+            struct ASTNode *while_block;    // code inside while loop
             
         } while_loop;
+
+        // AST_CONDITIONAL_NODE: x >= 3
+        struct {
+            char *left_expression;
+            char *comparison_op;
+            char *right_expression;
+        } conditional;
 
         // AST_PRINT_NODE 
         struct {
             struct ASTNode *expression;         // points to an expression to print
-        } print_node;
+        } print_stmt;
 
         // AST_READ_NODE
         struct {
             char *identifier;         // points to an identifier to store value
-        } read_node;
+        } read_stmt;
 
         // AST_UNARY_EXPR: x++, --a, -x, !flag
         struct {
@@ -113,20 +120,15 @@ typedef struct ASTNode {
             int is_prefix;               // 1 for ++x/--x, 0 for x++/x-- (matters for inc/dec)
         } unary_expr;
 
-        // AST_COMPARISON_NODE: x >= 3
-        struct {
-            char *left_expression;
-            char *comparison_op;
-            char *right_expression;
-
-        } comparison;
-
         // AST_BINARY_EXPR let x = a * t;
         struct {
             struct ASTNode *left;       // left operand
             char *op;                   // +, *, /, -, etc
             struct ASTNode *right;      // right operand
         } binary_expr;
+
+
+
 
     } data;
 } ASTNode;

@@ -24,7 +24,7 @@ Parser* parser_init(Lexer *l) {
 }
 
 
-void parser_free(Parser* parser) {
+void parser_free(Parser *parser) {
     /*
     Free up tokens and lexemes(The parser now owns the lexemes) of current and peek tokens 
     */
@@ -46,7 +46,7 @@ void parser_free(Parser* parser) {
     free(parser);
 }
 
-ASTNode* parse_program(Parser* parser) {
+ASTNode* parse_program(Parser *parser) {
     // Create the program root node
     ASTNode *program = (ASTNode*)malloc(sizeof(ASTNode));
     if (!program) {
@@ -68,7 +68,7 @@ ASTNode* parse_program(Parser* parser) {
 
 /* ========== PRIVTATE helper functions ========== */
 
-static ASTNode* parse_stmts(Parser* parser) {
+static ASTNode* parse_stmts(Parser *parser) {
     /*
     Parses STMTS nodes reccursively 
 
@@ -99,7 +99,7 @@ static ASTNode* parse_stmts(Parser* parser) {
 
 }
 
-static ASTNode* parse_stmt(Parser* parser) {
+static ASTNode* parse_stmt(Parser *parser) {
 
     if (parser->current_token.tokenType == SEMICOLON) {
         return NULL;       
@@ -114,18 +114,31 @@ static ASTNode* parse_stmt(Parser* parser) {
 
     case KEYWORD_LET:   // var declaration, let x = 5;
         stmt = parse_var_decl(parser);
+        break;
 
     case IDENTIFIER:    // x = 6;
-        stmt = parse_assignment_stmt(parser);
+
+        if (parser->peek_token.tokenType == INC_OP || parser->peek_token.tokenType == DEC_OP) {
+            stmt = parse_unary_expr(parser);
+        } else if (parser->peek_token.tokenType == ASSIGN_OP) {
+            stmt = parse_assignment_stmt(parser);
+        } else {
+            parser_error(parser, ASSIGN_OP);
+        }
         break;
-    
+
+    case KEYWORD_IF:
+        stmt = parse_if_stmt(parser);
+        break;
+
+
     default:
         break;
     }
 
 }
 
-static ASTNode* parse_var_decl(Parser* parser) { 
+static ASTNode* parse_var_decl(Parser *parser) { 
     /*
     Parses the VAR_DECL node (let IDENTIFIER = <expr>) 
 
@@ -168,7 +181,7 @@ static ASTNode* parse_var_decl(Parser* parser) {
     return var_decl;
 }
 
-static ASTNode* parse_assignment_stmt(Parser* parser) {
+static ASTNode* parse_assignment_stmt(Parser *parser) {
     /*
     Parses the assignment node IDENT '=' <expr>
 
@@ -183,12 +196,7 @@ static ASTNode* parse_assignment_stmt(Parser* parser) {
     char *identifier = strdup(parser->current_token.lexeme);
 
     advance(parser);    // should be at '='
-
-    if (!match(parser, ASSIGN_OP)) {
-        return NULL;
-    }
-
-    advance(parser);    // now at <expr>>
+    advance(parser);    // move to expression
 
     ASTNode *value = parse_expr(parser);
     ASTNode *assignment_node = (ASTNode*)malloc((sizeof(ASTNode)));
@@ -200,46 +208,82 @@ static ASTNode* parse_assignment_stmt(Parser* parser) {
     }
 
     assignment_node->type = AST_ASSIGN_NODE;
-    assignment_node->data.assign.identifier = identifier;
-    assignment_node->data.assign.value = value;
+    assignment_node->data.assignment.identifier = identifier;
+    assignment_node->data.assignment.value = value;
 
     return assignment_node;
 
 }
 
-static ASTNode* parse_if_stmt(Parser* parser) {
+static ASTNode* parse_if_stmt(Parser *parser) {
+    /*
+    Parses If-statements: if (<conditional>) { <stmts> }
+    */
+
+    advance(parser);    // move to the opening paren
+    if (!match(parser->current_token.tokenType, LEFT_PAREN)) {
+        return NULL;
+    }
+    advance(parser);    // should be at the start of the conditional
+
+    ASTNode *conditional = parse_conditional(parser);
+    
+    if (!match(parser->current_token.tokenType, RIGHT_PAREN) || !match(parser->peek_token.tokenType, LEFT_CURL)) {
+        free(conditional);
+        return NULL;
+    }
+
+    advance(parser);    // consume right paren
+    advnace(parser);    // conume left curl
+
+    // now in the then_block 
+
+    ASTNode *then_block = parse_stmts(parser);
+
+    if (!match(parser->current_token.tokenType, RIGHT_CURL)) {
+        // TODO: FUck you
+    }
+
+
+
+    
 
 }
 
-static ASTNode* parse_loop_stmt(Parser* parser) {
+static ASTNode* parse_loop_stmt(Parser *parser) {
 
 }
 
-static ASTNode* parse_io_stmt(Parser* parser) {
+static ASTNode* parse_io_stmt(Parser *parser) {
 
 }
 
-static ASTNode* parse_inc_dec_stmt(Parser* parser) {
+
+static ASTNode* parse_expr(Parser *parser) {
+
+}
+static ASTNode* parse_unary_expr(Parser *parser) {
+
 
 }
 
-static ASTNode* parse_expr(Parser* parser) {
+static ASTNode *parse_binary_expr(Parser *parser) {
 
 }
 
-static ASTNode* parse_term(Parser* parser) {
+static ASTNode* parse_term(Parser *parser) {
 
 }
 
-static ASTNode* parse_factor(Parser* parser) {
+static ASTNode* parse_factor(Parser *parser) {
 
 }
 
-static ASTNode* parse_conditional(Parser* parser) {
+static ASTNode* parse_conditional(Parser *parser) {
 
 }
 
-static void advance(Parser* parser) {
+static void advance(Parser *parser) {
     /*
     Advances the parser throughout the tokens 
 
@@ -260,7 +304,7 @@ static void advance(Parser* parser) {
 }
 
 
-static bool match(Parser* parser, TokenType expectedType) {
+static bool match(Parser *parser, TokenType expectedType) {
     /*
     Matches the current token with the expected token
 
@@ -279,7 +323,7 @@ static bool match(Parser* parser, TokenType expectedType) {
     return true;
 }
 
-static void parser_error(Parser* parser, TokenType expectedType) {
+static void parser_error(Parser *parser, TokenType expectedType) {
     /*
     Throws error when parser finds an error with the token it got and the expected token
 

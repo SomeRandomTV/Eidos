@@ -68,7 +68,7 @@ As of now our BNF Grammar looks like this:
 
 ```bash
 <program> ::= <stmts>
-<stmts>   ::= <stmt>; <stmts>; | <stmt>;
+<stmts>   ::= <stmt> <stmts> | <stmt>
 ```
 
 Now things will get a little more nuanced as there are different tyoes of statements in a programming language. Are the ones for Eidos.
@@ -76,7 +76,7 @@ Now things will get a little more nuanced as there are different tyoes of statem
 
 ```bash
 <stmt> ::= <var_decl>
-         | <assignment_stmt>  
+         | <assignment_stmt>
          | <if_stmt>
          | <loop_stmt>
          | <io_stmt>
@@ -211,7 +211,7 @@ if (x > 5)      // Missing braces around body
 if (x > 5) {
     print(x);
 }
-else {          // 'else' on a new line is fine, but no semicolons between blocks
+else {          // 'else' on a new line is fine, but don't, its ugly
     print(0);
 };              // No semicolon after the if statement block
 ```
@@ -538,3 +538,6 @@ if (result > 20) {
 
 All of these follow the grammar rules defined earlier. Keep it simple, keep it explicit, and you'll be fine.
 
+---
+
+As Im sure you know, with more changes and higher complexity the BNF_Rules will change, so. yeah.
