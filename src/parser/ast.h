@@ -36,9 +36,11 @@ typedef enum {
     // Expression Nodes
     AST_BINARY_EXPR,
     AST_CONDITIONAL_NODE,
-    AST_IDENTIFIER,
-    AST_INT_LIT,
     AST_UNARY_EXPR, 
+
+    // TERMINALS 
+    AST_IDENTIFIER_NODE,
+    AST_INTAGER_LIT_NODE,
 
 } ASTNodeType;
 
@@ -49,7 +51,7 @@ typedef struct ASTNode {
     union {
         // Program Node
         struct {
-            struct ASTNode *statements;  // Points to AST_STMTS_NODE
+            struct ASTNode *stmts;  // Points to AST_STMTS_NODE
         } program;
 
 
