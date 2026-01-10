@@ -4,6 +4,15 @@
 #include "lexer/lexer.h"
 
 static char *read_file(const char *path) {
+    /*
+    Opens/Reads file given as cli argument
+
+    args:
+        *path (char) -> Pointer to file object 
+
+    returns:
+        
+    */
     FILE *f = fopen(path, "rb");
     if (!f) {
         perror("fopen");
@@ -40,6 +49,8 @@ int main(int argc, char *argv[]) {
 
     Token tok;
     printf("Lexeme Token\n");
+
+    // TODO: Driver logic 
     do {
         tok = next_token(&lexer);
 
